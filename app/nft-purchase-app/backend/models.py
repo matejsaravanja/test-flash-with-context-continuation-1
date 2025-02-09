@@ -18,4 +18,4 @@ class NFT(db.Model):
     metadata_url = db.Column(db.String(255))
     owner_public_key = db.Column(db.String(255), nullable=False)
 
-    def __repr_(
+    def __repr__
