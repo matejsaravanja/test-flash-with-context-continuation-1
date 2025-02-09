@@ -53,7 +53,7 @@ if ADMIN_WALLET_PRIVATE_KEY:
 
 else:
     admin_keypair = None
-    print("ADMIN_WALLET_PRIVATE_KEY not set.  Application will not be"
+    print("ADMIN_WALLET_PRIVATE_KEY not set.  Application will not be" 
           "able to perform admin functions.")
 
 # Database Models
