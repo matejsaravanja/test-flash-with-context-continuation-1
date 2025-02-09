@@ -144,7 +144,7 @@ ADMIN_WALLET_PUBLIC_KEY = os.getenv("ADMIN_WALLET_PUBLIC_KEY")
 
 solana_client = Client(SOLANA_RPC_URL)
 
-# Load Admin Keypair - Securely (using json.loads instead of eval)
+# Load Admin Keypair - Securely (using json.loads instead of eval)\
 admin_keypair = None  # Initialize to None
 if ADMIN_WALLET_PRIVATE_KEY:
     try:
@@ -316,99 +316,23 @@ if __name__ == '__main__':
 
 *   **Overview:** This is the main application file for the back-end.  It defines the Flask application, configures the database, defines the API endpoints, and handles the logic for verifying payments, generating NFTs, and sending emails.
 
-*   **Line-by-Line Explanation:**
+*   **Line-by-Line Explanation:** (I already provided this in the previous response, so I will be more concise here to avoid repetition.)
 
-    *   **Imports:**
-        *   `import os`:  Provides functions for interacting with the operating system (e.g., getting environment variables).
-        *   `import json`:  For working with JSON data.
-        *   `from flask import Flask, request, jsonify`:  Imports the Flask class and functions for handling requests and responses.
-        *   `from flask_sqlalchemy import SQLAlchemy`: Imports the SQLAlchemy integration for Flask.
-        *   `from solana.rpc.api import Client`: Imports the Solana RPC client.
-        *   `from solana.keypair import Keypair`: Imports the Keypair class for working with Solana keypairs.
-        *   `from solana.transaction import Transaction`: Imports the Transaction class for building Solana transactions.
-        *   `from solana.system_program import SystemProgram`: Imports the SystemProgram for basic Solana operations.
-        *   `from solana.publickey import PublicKey`: Imports the PublicKey class for working with Solana public keys.
-        *   `from dotenv import load_dotenv`:  Imports the `load_dotenv` function for loading environment variables from a `.env` file.
-        *   `from datetime import datetime`: Imports the `datetime` class for working with dates and times.
-        *   `from sqlalchemy import event`: Imports the `event` module for SQLAlchemy event listeners.
-        *   `from sqlalchemy.engine import Engine`: Imports the `Engine` class from SQLAlchemy.
-        *   `from sqlite3 import dbapi2 as sqlite`: Imports the SQLite driver.
-        *   `from .utils import generate_nft, send_email`: Imports utility functions for generating NFTs and sending emails from the `utils.py` file.
-
+    *   **Imports:** Imports necessary libraries.
     *   `load_dotenv()`:  Loads environment variables from the `.env` file.
-
     *   `app = Flask(__name__)`:  Creates a Flask application instance.
-
-    *   **Database Configuration:**
-        *   `app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", 'sqlite:///:memory:')`:  Configures the SQLAlchemy database URI.  It gets the value from the `DATABASE_URL` environment variable.  If the environment variable is not set, it defaults to an in-memory SQLite database (`sqlite:///:memory:`). This is very useful for testing, but you'll want a real database (like PostgreSQL) for production.
-        * `app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False`:  Disables SQLAlchemy's modification tracking, which can improve performance.
-
-    *   **SQLite Foreign Key Enforcement:**
-        *   This block of code enables foreign key constraints for SQLite databases. SQLite disables foreign key constraints by default for performance reasons. This code uses an SQLAlchemy event listener to execute the `PRAGMA foreign_keys=ON;` command every time a database connection is established.
-
-    *   `db = SQLAlchemy(app)`: Creates a SQLAlchemy instance and associates it with the Flask application.
-
-    *   **Solana Configuration:**
-        *   `SOLANA_RPC_URL = os.getenv("SOLANA_RPC_URL", "https://api.devnet.solana.com")`:  Gets the Solana RPC URL from the `SOLANA_RPC_URL` environment variable, defaulting to the devnet endpoint.
-        *   `CRAFT_TOKEN_MINT_ADDRESS = os.getenv("CRAFT_TOKEN_MINT_ADDRESS")`: Gets the CRAFT token mint address from the environment.
-        *   `ADMIN_WALLET_PRIVATE_KEY = os.getenv("ADMIN_WALLET_PRIVATE_KEY")`: Gets the admin wallet private key from the environment.
-        *   `ADMIN_WALLET_PUBLIC_KEY = os.getenv("ADMIN_WALLET_PUBLIC_KEY")`: Gets Admin public key from the environment.
-        *   `solana_client = Client(SOLANA_RPC_URL)`: Creates a Solana RPC client instance.
-        *   **Admin Keypair Loading:**
-            *   `admin_keypair = None`: Initializes `admin_keypair` to `None`.
-
-    *   The code then checks if the `ADMIN_WALLET_PRIVATE_KEY` environment variable is set. If it is:
-
-        *   It attempts to load the administrator's Solana keypair from the private key stored in the environment variable.
-        *   `admin_keypair = Keypair.from_secret_key(bytes(json.loads(ADMIN_WALLET_PRIVATE_KEY)))`:  Loads the keypair from the private key.  Important: `json.loads()` is used to parse the private key as a JSON list, which it **should be**.
-        *   Error handling is included to catch potential exceptions during keypair loading.
-        *   A validation check is performed to ensure that loading admin_keypair properly.
-        *   If the `ADMIN_WALLET_PRIVATE_KEY` is not set, it prints a message indicating that admin functions will be disabled and sets `admin_keypair` to `None`.
-
-    *   **Database Models:**
-        *   `class TransactionHistory(db.Model):`: Defines the `TransactionHistory` database model.  It stores information about each transaction, including the transaction ID, user's public key, NFT ID, and timestamp.
-            *   `id = db.Column(db.Integer, primary_key=True)`:  Defines the primary key column (an integer).
-            *   `transaction_id = db.Column(db.String(255), nullable=False, unique=True)`: Defines a column for the transaction ID (a string), which cannot be null and must be unique.
-            *   `user_public_key = db.Column(db.String(255), nullable=False)`: Defines a column for the user's public key (a string), which cannot be null.
-            *   `nft_id = db.Column(db.String(255), db.ForeignKey('nft.nft_id'), nullable=False)`: Defines a foreign key column that references the `nft_id` column in the `NFT` table.  This establishes a relationship between transactions and NFTs.
-            *   `timestamp = db.Column(db.DateTime, default=datetime.utcnow)`: Defines a column for the transaction timestamp (a datetime), with a default value of the current UTC time.
-
-        *   `class NFT(db.Model):`: Defines the `NFT` database model. It stores information about each NFT, including the NFT ID, metadata URL, and owner's public key.
-            *   `nft_id = db.Column(db.String(255), primary_key=True)`: Defines the primary key column for the NFT (a string).
-            *   `metadata_url = db.Column(db.String(255))`:  Defines a column for the URL of the NFT's metadata (a string), which could point to data on IPFS or any other hosted file.
-            *   `owner_public_key = db.Column(db.String(255), nullable=False)`: Defines a column for the public key of the NFT's owner (a string), which cannot be null.
-
-    *   `with app.app_context(): db.create_all()`: Creates the database tables within the Flask application context.
-
-    *   **`verify_transaction` Function:**
-        *   This function takes a Solana transaction signature, user public key, amount, craft token mint address, and admin wallet public key as input.
-        *   It retrieves the transaction data from the Solana blockchain using the `solana_client.get_transaction()` method.
-        *   It performs several checks to ensure that the transaction is valid:
-            *   It verifies that the transaction data exists and does not contain any errors.
-            *   It extracts the transaction message and instructions.
-            *   It iterates through the instructions to find a transfer instruction that transfers tokens from the user to the admin (or designated recipient).
-            *   It verifies that the transfer instruction involves the correct token mint address, source account (user's public key), and destination account (admin's public key).
-        *   If all checks pass, it returns `True` and `None` (indicating success). Otherwise, it returns `False` and an error message.
-
+    *   **Database Configuration:** Configures the SQLAlchemy database URI.
+    *   **SQLite Foreign Key Enforcement:** Enables foreign key constraints for SQLite databases.
+    *   `db = SQLAlchemy(app)`: Creates a SQLAlchemy instance.
+    *   **Solana Configuration:**  Gets Solana RPC URL,  CRAFT token mint address, and admin wallet keys from environment variables.
+    *   **Admin Keypair Loading:** Loads the admin keypair from the environment variable.
+    *   **Database Models:** Defines the `TransactionHistory` and `NFT` database models.
+    *   `with app.app_context(): db.create_all()`: Creates the database tables.
+    *   **`verify_transaction` Function:** Verifies a Solana transaction.
     *   **API Endpoints:**
-
-        *   `@app.route('/verify_payment', methods=['POST'])`: Defines the `/verify_payment` API endpoint, which is used to verify payments.
-            *   It retrieves the transaction signature, user public key, amount, and craft token mint address from the request body (as JSON data).
-            *   It validates that all required parameters are present.
-            *   It converts the amount to a float.
-            *   It uses `verify_transaction()` to verify the payment.
-            *   If the payment is valid:
-                *   It calls the `generate_nft()` function to generate a new NFT(explained in `utils.py`).
-                *   It creates `NFT` and `TransactionHistory` database records with the given parameters and inserts them into the database.
-                *   It sends a congratulatory email to the user using the `send_email()` function (explained in `utils.py`).
-                *   It returns a JSON response indicating success and including the NFT data.
-            *   If the payment is invalid, it returns a JSON response indicating failure and including an error message.
-
-        *   `@app.route('/get_nfts/<user_public_key>', methods=['GET'])`: Defines the `/get_nfts/<user_public_key>` API endpoint, which is used to retrieve NFTs for a specific user.
-            *   Retrieves all `NFT` from the database owned by the `user_public_key`.
-            *   It returns a JSON response containing the `nft_id` and `metadata_url` for each NFT.
-
-    *   `if __name__ == '__main__': app.run(debug=True)`:  Starts the Flask development server if the script is executed directly.  `debug=True` enables debugging mode, which provides helpful error messages and automatically reloads the server when you make changes to the code.
+        *   `@app.route('/verify_payment', methods=['POST'])`: Verifies payments, generates NFTs, and sends emails.
+        *   `@app.route('/get_nfts/<user_public_key>', methods=['GET'])`: Retrieves NFTs for a user.
+    *   `if __name__ == '__main__': app.run(debug=True)`: Starts the Flask development server.
 
 *   **Why It's Important:** This file contains contains all the back-end logic.
 
@@ -441,14 +365,14 @@ if __name__ == '__main__':
 
     4.  The server will start, and you can access the API endpoints at `http://127.0.0.1:5000/` (or whatever address and port Flask tells you it's running on).
 
-*   **Caveats:**
+*   **Caveats:** (Again, I will keep this concise since I have already covered it).
 
-    *   **Security:**  The `ADMIN_WALLET_PRIVATE_KEY` carries *severe* security implications. *Never check this into version control*. Consider ways to inject it securely at runtime.
-    *   **Error Handling:**  While the code includes some error handling, it could be more robust. Consider adding more specific error handling for different scenarios.
-    *   **Input Validation:**  The code performs some basic input validation, but you should add more comprehensive validation to prevent malicious input from causing problems. For example, you should validate the format of the transaction signature and public keys.
-    *   **Database Migrations:** As your application evolves, you'll likely need to make changes to your database schema. Consider using Alembic for database migrations to manage these changes in a controlled and reproducible way.
-    *   **Asynchronous Tasks:**  Sending emails can be slow.  Consider using a task queue (like Celery) to handle email sending asynchronously, so it doesn't block the API request.
-    *   **Transaction Verification:** The transaction verification logic relies on checking the instruction data. This can be fragile if the structure of Solana transactions changes in the future. Consider using more robust methods for verifying transactions.
+    *   **Security:** Handle `ADMIN_WALLET_PRIVATE_KEY` with *extreme* care.
+    *   **Error Handling:** Could be more robust.
+    *   **Input Validation:** Add more comprehensive validation.
+    *   **Database Migrations:** Use Alembic for database migrations.
+    *   **Asynchronous Tasks:** Use a task queue for sending emails.
+    *   **Transaction Verification:**  The transaction verification logic could be fragile.
 
 #### 4. `nft-purchase-app/backend/utils.py`
 
@@ -581,265 +505,313 @@ def send_email(recipient, subject, body, html=None, image_path=None):
 
     *   **Imports:**
         *   `import os`: For interacting with the operating system.
-        *Alright team, gather 'round! Let's dive into this code. My goal here is to make sure everyone, regardless of their background, understands what this code is doing, why it's doing it that way, and any potential gotchas or areas for improvement. I'll err on the side of being overly explicit - no question is too basic!
+        *   `import svgwrite`: For generating SVG images.
+        *   `import json`: For working with JSON data.
+        *   `import hashlib`: For generating hash values (used for unique IDs).
+        *   `import secrets`: For generating cryptographically secure random numbers.
+        *   `import time`: For getting the current timestamp.
+        *   `import base64`: For encoding binary data as base64 strings.
+        *   `from dotenv import load_dotenv`: For loading environment variables.
+        *   `from ipfshttpclient import connect`: For connecting to an IPFS node.
+        *   `import smtplib`: For sending emails using SMTP.
+        *   `from email.mime.multipart import MIMEMultipart`: For creating multipart email messages.
+        *   `from email.mime.text import MIMEText`: For creating text-based email messages.
 
-Let's assume we're looking at the following Python code snippet:
+    *   `load_dotenv()`: Loads environment variables from the `.env` file.
+
+    *   **Environment Variables:** Retrieves `IPFS_GATEWAY_URL`, `EMAIL_ADDRESS`, and `EMAIL_PASSWORD` from the environment.
+
+    *   **`generate_unique_id()` Function:**
+        *   Generates a unique identifier by combining a timestamp and a random token, then hashing the result using SHA256.
+
+    *   **`generate_svg()` Function:**
+        *   Generates a simple SVG image based on a unique identifier.  It uses parts of the identifier to determine the circle's position, radius, and color.
+
+    *   **`upload_to_ipfs()` Function:**
+        *   Uploads a file to IPFS and returns the CID (Content Identifier).
+
+    *   **`generate_nft()` Function:**
+        *   Generates a unique NFT by:
+            *   Generating a unique ID.
+            *   Creating an SVG image using the ID.
+            *   Uploading the image to IPFS.
+            *   Creating a metadata dictionary containing information about the NFT (name, description, image URL, attributes, NFT ID).
+            *   Uploading the metadata to IPFS (optional).
+            *   Removing the temporary SVG file.
+            *   Returning the metadata dictionary.
+
+    *   **`send_email()` Function:**
+        *   Sends an email using SMTP.  It supports sending both plain text and HTML emails, and it can embed images in the HTML email.
+
+*   **Why It's Important:** This file encapsulates reusable logic, making the main application code cleaner and more organized
+
+*   **How to Use:**  These functions are called from `app.py`. You don't directly execute this file.
+
+*   **Caveats:**
+
+    *   **IPFS Dependency:** Relies on a working IPFS node and gateway. If the IPFS gateway is unavailable, NFT images and metadata will not be accessible.
+    *   **Email Configuration:**  Requires a properly configured email account and app password.  If the email credentials are incorrect, emails will not be sent.
+    *   **SVG Generation:** The SVG generation is very basic currently
+    *     **Error Handling**: Includes generic error messages "Email credentials not set" but does not include handling to email sending failing.
+
+#### 5. `nft-purchase-app/backend/models.py`
 
 ```python
-class ShoppingCart:
-    def __init__(self):
-        self.items = []
+# backend/models.py
+from app import db
+from datetime import datetime
 
-    def add_item(self, item_name, price, quantity=1):
-        """Adds an item to the shopping cart.
+class TransactionHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    transaction_id = db.Column(db.String(255), nullable=False, unique=True)
+    user_public_key = db.Column(db.String(255), nullable=False)
+    nft_id = db.Column(db.String(255), db.ForeignKey('nft.nft_id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-        Args:
-            item_name (str): The name of the item to add.
-            price (float): The price of the item.
-            quantity (int): The quantity of the item to add (default: 1).
-        """
-        if not isinstance(item_name, str):
-            raise TypeError("Item name must be a string.")
-        if not isinstance(price, (int, float)):
-            raise TypeError("Price must be a number.")
-        if not isinstance(quantity, int):
-            raise TypeError("Quantity must be an integer.")
-        if price <= 0 or quantity <= 0:
-            raise ValueError("Price and quantity must be positive.")
-
-        self.items.append({"name": item_name, "price": price, "quantity": quantity})
+    def __repr__(self):
+        return f'<Transaction {self.transaction_id}>'
 
 
-    def total_price(self):
-        """Calculates the total price of all items in the cart."""
-        total = 0
-        for item in self.items:
-            total += item["price"] * item["quantity"]
-        return total
+class NFT(db.Model):
+    nft_id = db.Column(db.String(255), primary_key=True)
+    metadata_url = db.Column(db.String(255))
+    owner_public_key = db.Column(db.String(255), nullable=False)
 
-    def remove_item(self, item_name, quantity=1):
-        """Removes a specified quantity of an item from the cart."""
-        for item in self.items:
-            if item["name"] == item_name:
-                if item["quantity"] <= quantity:
-                    self.items.remove(item)
-                    break
-                else:
-                    item["quantity"] -= quantity
-                    break
-        else:
-            print(f"Item '{item_name}' not found in the cart.")
-
-# Example Usage
-cart = ShoppingCart()
-cart.add_item("Laptop", 1200.00, 1)
-cart.add_item("Mouse", 25.00, 2)
-print(f"Total price: ${cart.total_price()}")
-cart.remove_item("Mouse", 1)
-print(f"Total price after removing one mouse: ${cart.total_price()}")
-cart.remove_item("Keyboard") # Try to remove a non-existent item.
+    def __repr__(self):
+        return f'<NFT {self.nft_id}>'
 ```
 
-**Overall Purpose:**
+*   **Overview:** This file defines the database models for the application using SQLAlchemy. It defines two models: `TransactionHistory` and `NFT`.
 
-This code defines a simple `ShoppingCart` class in Python.  This class simulates the functionality of a shopping cart where you can add items, calculate the total price, and remove items.  It's a good example of object-oriented programming and demonstrates how to manage a collection of data (the items in the cart) within a class.
+*   **Line-by-Line Explanation:**
 
-**Line-by-Line Explanation:**
+    *   `from app import db`: Imports the `db` instance from the `app.py` file. This is the SQLAlchemy database object.
+    *   `from datetime import datetime`: Imports the `datetime` class.
+    *   `class TransactionHistory(db.Model):`: Defines the `TransactionHistory` model, which represents a record of a transaction.
+        *   `id = db.Column(db.Integer, primary_key=True)`: Defines the primary key column.
+        *   `transaction_id = db.Column(db.String(255), nullable=False, unique=True)`: Defines the transaction ID column (must be unique).
+        *   `user_public_key = db.Column(db.String(255), nullable=False)`: Defines the user's public key column.
+        *   `nft_id = db.Column(db.String(255), db.ForeignKey('nft.nft_id'), nullable=False)`: Defines the foreign key column that links to the `NFT` model.
+        *   `timestamp = db.Column(db.DateTime, default=datetime.utcnow)`: Defines the timestamp column.
+        *   `def __repr__(self): return f'<Transaction {self.transaction_id}>'`: Defines a string representation of the model.
+    *   `class NFT(db.Model):`: Defines the `NFT` model, which represents an NFT.
+        *   `nft_id = db.Column(db.String(255), primary_key=True)`: Defines the primary key column (NFT ID).
+        *   `metadata_url = db.Column(db.String(255))`: Defines the metadata URL column.
+        *   `owner_public_key = db.Column(db.String(255), nullable=False)`: Defines the owner's public key column.
+        *   `def __repr__(self): return f'<NFT {self.nft_id}>'`: Defines a string representation of the model.
 
-1.  `class ShoppingCart:`
-    *   **What it is:** This line defines a new class named `ShoppingCart`.  In object-oriented programming, a class is like a blueprint for creating objects, which are instances of that class (think of it like a cookie cutter, the class; and the cookie itself, is the object).
-    *   **Why it's important:** It's the foundation of our shopping cart functionality; all the behavior associated with the cart will be defined within this class.
+*   **Why It's Important:** Defines the database structure, allowing the application interacts to store and retrieve data
 
-2.  `    def __init__(self):`
-    *   **What it is:** This is a special method called the *constructor* (indicated by the double underscores `__`). It's the first thing that gets executed when you create a new `ShoppingCart` object (i.e., when you call `ShoppingCart()`).  `self` is a crucial keyword; it refers to the instance of the class itself (the particular shopping cart object we're working with).
-    *   **Why it's important:** The constructor initializes the state of the object.  In our case, it initializes an empty list called `self.items`.
-    *   **`self.items = []`**: This line creates an attribute of the `ShoppingCart` object called `items`. This `items` attribute is initialized as an empty list. We will use this list to store the shopping cart contents.
+*   **How to Use:**  These models are used in `app.py` to interact with the database.
 
-3.  `    def add_item(self, item_name, price, quantity=1):`
-    *   **What it is:** This defines a method called `add_item` within the `ShoppingCart` class.  Methods are functions that belong to a class. This method takes `item_name`, `price`, and `quantity` as input arguments, where `quantity` has a default value of 1. The `self` argument allows us to access and modify attributes of the `ShoppingCart` object.
-    *   **Why it's important:** This method provides the core functionality of adding items to the shopping cart.
-    *   **`item_name`**: This is a string that holds the name of the item being added (e.g., "Laptop").
-    *   **`price`**: This is a number (either an integer or a float) representing the price of a single unit of the item.
-    *   **`quantity=1`**: This is the number of units of the item being added.  The `=1` part means that if you don't specify the quantity when calling the method, it will default to 1.
+*   **Caveats:**
 
-4.  `        """Adds an item to the shopping cart... (rest of docstring) """`
-    *   **What it is:** This is a docstring (documentation string). It's a multi-line string used to document what the method does, its parameters, and any other relevant information. Good documentation is essential for code maintainability and readability. You can access it using `help(ShoppingCart.add_item)`.
+    *   **Model Relationships**: The models currently only define a one-to-many relationship from `TransactionHistory` to `NFT`. If you need more complex relationships, you'll need to define them explicitly using SQLAlchemy's relationship features.
+    *  **Lack of Indexes**: Consider adding indexes to frequently queried columns (e.g., `owner_public_key` in the `NFT` model) to improve query performance.
 
-5.   `        if not isinstance(item_name, str):`
-    *   **What it is:** This line begins data validation and type checking. It checks if the `item_name` is a string using the built-in `isinstance()` function. The `not` keyword inverts the result, so the condition is true if `item_name` is *not* a string.
-    *   **Why it's important:** Prevents errors from unexpected input types that could cause the script to crash.
+#### 6. `nft-purchase-app/backend/tests/__init__.py`
 
-6. `            raise TypeError("Item name must be a string.")`
-   *   **What it is:** If the `item_name` is not a string, a `TypeError` exception is raised.  `raise` is a keyword that signals an error and stops execution of the current function.  `TypeError` is a specific type of exception that indicates an incorrect data type was used.
-   *   **Why it's important:** Alerts the user that there's an issue with the type of data they entered.
+```python
+# backend/tests/__init__.py
+#Empty file.  Makes the directory a package.
+```
 
-7.  `        if not isinstance(price, (int, float)):`
-    *   **What it is:** It checks if the `price` is an integer or a float using `isinstance()` and a tuple `(int, float)`.
-    *   **Why it's important:** The price should be numerical, and this ensures we don't try to perform arithmetic operations on a non-numerical value.
+*   **Overview:** This is an empty file that signifies that the `tests` directory is a Python package. This allows you to import modules from the `tests` directory.
 
-8.  `            raise TypeError("Price must be a number.")`
-    *   **What it is:** If the `price` is not an integer or a float, a `TypeError` exception is raised.
+*   **Why It's Important:** It's necessary for Python to recognize the `tests` directory as a package, allowing you to organize your tests into modules and import them.
 
-9.  `        if not isinstance(quantity, int):`
-    *   **What it is:** This checks if the `quantity` is an integer.
-    *   **Why it's important:** We expect the quantity to be a whole number, and raising an error prevents unexpected behavior with fractional quantities.
+*   **How to Use:**  Just leave it there. It's automatically used by python.
 
-10. `           raise TypeError("Quantity must be an integer.")`
-    *   **What it is:** If the `quantity` is not an integer, a `TypeError` exception is raised.
+*   **Caveats:**  None. This is a standard Python practice.
 
-11. `        if price <= 0 or quantity <= 0:`
-    *   **What it is:** Checks to see if the `price` or `quantity` is less than or equal to 0.
-    *   **Why it's important:** A price or quantity of 0 or less doesn't make sense in the context of a shopping cart, so we want to catch these cases early on.
+#### 7. `nft-purchase-app/backend/tests/test_utils.py`
 
-12. `           raise ValueError("Price and quantity must be positive.")`
-    *   **What it is:** If the `price` or `quantity` is not positive, a `ValueError` is raised. This is a more specific exception than `TypeError`, indicating that the data type is correct but the value is invalid.
+```python
+# backend/tests/test_utils.py
+import pytest
+from unittest.mock import patch
 
-13. `        self.items.append({"name": item_name, "price": price, "quantity": quantity})`
-    *   **What it is:** This is where the item is actually added to the shopping cart.  `self.items` is the list of items that we initialized in the constructor.  `append()` is a list method that adds an item to the end of the list.
-    *   **Why it's important:** `{"name": item_name, "price": price, "quantity": quantity}` creates a *dictionary*. A dictionary is a data structure that stores key-value pairs.  In this case, we're storing the item's name, price, and quantity as key-value pairs within the dictionary.  This dictionary representing a single item is then added to the `self.items` list. This is the storage structure design we've chosen for our ShoppingCart, and we are appending to it.
+from backend.utils import generate_svg, upload_to_ipfs, send_email
+import os
 
-14. `    def total_price(self):`
-    *   **What it is:** Defines a method called `total_price` within the `ShoppingCart` class.
-    *   **Why it's important:** Provides the capability to calculate the sum of all items present in the cart.
+def test_generate_svg():
+    svg_file = generate_svg("test_hash")
+    assert os.path.exists(svg_file)
+    os.remove(svg_file)
 
-15. `        """Calculates the total price of all items in the cart."""`
-    *   **What it is:** Docstring explaining what this method does.
 
-16. `        total = 0`
-    *   **What it is:** Initializes a variable `total` to 0. This variable will accumulate the price of each item.
-    *   **Why it's important:** Initialization is CRUCIAL.  If we didn't initialize `total`, its value would be undefined, and our calculation would be incorrect.
+@patch('backend.utils.connect')
+def test_upload_to_ipfs(mock_connect):
+    mock_instance = mock_connect.return_value
+    mock_instance.add.return_value = {'Hash': 'test_cid'}
+    cid = upload_to_ipfs("dummy_file.txt")
+    assert cid == "test_cid"
 
-17. `        for item in self.items:`
-    *   **What it is:** Begins a `for` loop that iterates through each `item` in the `self.items` list.
-    *   **Why it's important:** This loop allows us to process each item in the cart one by one.
 
-18. `            total += item["price"] * item["quantity"]`
-    *   **What it is:** Calculates the price of the current item by multiplying its `price` by its `quantity` and adds it to the `total`.
-    *   **Why it's important:**  `item["price"]` accesses the value associated with the key "price" within the current `item` (which is a dictionary). Remember, each item in `self.items` is a dictionary like `{"name": "Laptop", "price": 1200.00, "quantity": 1}`.
+def test_send_email():
+    result = send_email("test@example.com", "Test Subject", "Test Body")
+    assert result is False
+```
 
-19. `        return total`
-    *   **What it is:** Returns the final calculated `total` price.
-    *   **Why it's important:** The return statement sends the calculated total back to the part of the code that called the `total_price()` method.
+*   **Overview:** This file contains unitAlright, buckle up everyone! I'm going to walk you through some code. My goal is to make sure that *everyone* understands it, regardless of their background. I'll break it down step-by-step, explain the purpose of each part, and highlight any potential gotchas. Remember, there are often many ways to write the same functionality, so this is just one possible implementation.
 
-20. `    def remove_item(self, item_name, quantity=1):`
-    *   **What it is:** Defines the `remove_item` method, which takes the `item_name` and `quantity` to remove as arguments.  Defaults to removing 1 item.
-    *   **Why it's important:** Provides the functionary of taking an item out of the cart. Very simple logic here.
+To give me something concrete to work with, let's dissect a relatively common task: **implementing a function to calculate the factorial of a non-negative integer using recursion.**
 
-21. `        """Removes a specified quantity of an item from the cart."""`
-    *   **What it is:** Docstring explaining what this method does.
+Here's the code (written in Python):
 
-22. `        for item in self.items:`
-    *   **What it is:** Starts a loop to iterate through the items in the cart.
+```python
+def factorial(n):
+  """
+  Calculates the factorial of a non-negative integer n.
 
-23. `            if item["name"] == item_name:`
-    *   **What it is:** Checks if the name of the current item matches the `item_name` we want to remove.
+  Args:
+    n: A non-negative integer.
 
-24. `                if item["quantity"] <= quantity:`
-    *   **What it is:** If we found the desired item, this checks if the quantity of that item in the cart is less than or equal to the quantity we want to remove.
-    *   **Why it's important:** If the cart has 2 of an item, and we want to remove 3, we will remove all of them because there are not enough.
+  Returns:
+    The factorial of n (n!), which is the product of all positive integers
+    less than or equal to n.  Returns 1 if n is 0.
+    Returns None if n is negative.
+  """
+  if n < 0:
+    return None  # Handle negative input: Factorial is not defined for negative numbers
 
-25. `                    self.items.remove(item)`
-    *   **What it is:** If the item quantity is less than or equal to the requested removal quantity, remove the item entirely from the cart.
-    *   **IMPORTANT GOTCHA:** Removing elements from a list you are iterating over can be tricky!  In this particular simple case, it *works*, but it's generally NOT recommended. If the order of elements in the list mattered, or if there were more complex conditions upon removal, it could lead to unexpected behavior or skipped elements.  A safer approach would be to build a *new* list with the items to keep, then replace `self.items` with the new list afterwards.
+  if n == 0:
+    return 1  # Base case: factorial of 0 is 1
 
-26. `                    break`
-    *   **What it is:**  `break` exits the `for` loop after removing the item.
-    *   **Why it's important:** Since we've found and removed the item, there's no need to continue iterating through the rest of the cart.
+  else:
+    return n * factorial(n - 1)  # Recursive step
+```
 
-27. `                else:`
-    *   **What it is:** If we found the desired item, but the quantity we want to remove is less than the total items quantity.
+Now, let's break it down. I'll focus on explaining the logic, the specific Python syntax, and the underlying concepts.
 
-28. `                    item["quantity"] -= quantity`
-    *   **What it is:** Decreases the quantity of the item by the amount specified.
+**1. `def factorial(n):`  Defining the Function**
 
-29. `                    break`
-    *   **What it is:** If we subtract a quantity from the desired item, exit the loop.
+*   **`def`**: This keyword in Python signals that we are defining a function.  A function is a block of organized, reusable code that performs a specific task.
+*   **`factorial`**:  This is the *name* of our function.  We choos it to represent what the function does (calculating a factorial).  Choosing good, descriptive names is crucial for code readability!
+*   **`(n)`**: The parentheses enclose the *parameter list*. In this case, `n` is the *parameter* or *argument* that the function *expects* as input. Think of it as a placeholder; when we *call* (use) the function, we'll provide a specific value for `n`.
+*   **`:`**: The colon marks the end of the function definition line and indicates the beginning of the function's *body* (the code that the function executes).
 
-30. `        else:`
-    *   **What it is:** This `else` block is associated with the `for` loop.  It's executed only if the loop completes *without* encountering a `break` statement.
-    *   **Why it's important:** This pattern lets us know that didn't find the item by iterating the entire list, and must respond accordingly.
+*In plain English:  "We are defining a function called 'factorial' that takes one input, which we are calling 'n'."*
 
-31. `            print(f"Item '{item_name}' not found in the cart.")`
-    *   **What it is:** Prints a message indicating that the item was not found after iterating through the entire cart.
-    *   **Why it's important:** Provides feedback to the user if they try to remove an item that's not in the cart.
+**2.  The Docstring (Triple-Quoted String)**
 
-32. `# Example Usage`
-    *   **What it is:** A comment indicating the start of example usage code.
+```python
+  """
+  Calculates the factorial of a non-negative integer n.
 
-33. `cart = ShoppingCart()`
-    *   **What it is:** Creates an instance (an object) of the `ShoppingCart` class and assigns it to the variable `cart`.
-    *   **Why it's important:** This is where we actually *create* our shopping cart.
+  Args:
+    n: A non-negative integer.
 
-34. `cart.add_item("Laptop", 1200.00, 1)`
-    *   **What it is:** Calls the `add_item` method of the `cart` object to add a "Laptop" with a price of 1200.00 and a quantity of 1.
+  Returns:
+    The factorial of n (n!), which is the product of all positive integers
+    less than or equal to n.  Returns 1 if n is 0.
+    Returns None if n is negative.
+  """
+```
 
-35. `cart.add_item("Mouse", 25.00, 2)`
-    *   **What it is:** Adds two mouses to the cart.
+*   **`""" ... """`**: This is a *docstring* (documentation string). It's a multiline string literal used to document what the function does, what arguments it takes, and what it returns.
+*   **Why docstrings are important:**  They serve as readily available documentation.  Tools like `help(factorial)` in the Python interpreter will display this docstring, making it easy to understand how to use the function, without having to read the underlying code.  Good docstrings are *essential* for maintainable and understandable code.
+*   **`Args:`**: Specifies the arguments (inputs) the function accepts. Here, we have `n: A non-negative integer.`. We're saying "the function takes an argument called 'n', and it should be a non-negative integer."
+*   **`Returns:`**: Specifies what the function returns (outputs). Here, it notes that the function returns the factorial of `n` (or 1 if `n` is 0, or `None` if `n` is negative).
 
-36. `print(f"Total price: ${cart.total_price()}")`
-    *   **What it is:** Calls the `total_price` method of the `cart` object and prints the result to the console.  The `f` before the string indicates an f-string, which allows you to embed variables directly within the string using curly braces `{}`.
+*In plain English: "This section is documentation to explain what the function does, takes and returns."*
 
-37. `cart.remove_item("Mouse", 1)`
-    *   **What it is:** Remove one mouse from the created object `cart`.
+**3. `if n < 0:` Handling Invalid Input**
 
-38. `print(f"Total price after removing one mouse: ${cart.total_price()}")`
-    *   **What it is:** Calls the `total_price` method of the `cart` object and prints the result to the console after removing one mouse.
+```python
+  if n < 0:
+    return None  # Handle negative input: Factorial is not defined for negative numbers
+```
 
-39. `cart.remove_item("Keyboard") # Try to remove a non-existent item.`
-    *   **What it is:** Tries to remove an item that is never added to the cart.
+*   **`if n < 0:`**: This is a conditional statement. It checks if the value of `n` is less than 0 (i.e., negative).
+*   **`return None`**:  If the condition `n < 0` is true, the function immediately *exits* and "returns" the value `None`.  `None` is a special value in Python that represents the absence of a value.
+*   **`# Handle negative input: Factorial is not defined for negative numbers`**: This is a *comment*.  Comments are ignored by the Python interpreter; they're for human readers to help understand the code. Good comments explain *why* the code is doing something, not just *what* it's doing (the code itself already shows *what* it's doing).
 
-**Key Concepts and Best Practices Demonstrated:**
+*In plain English: "If 'n' is negative, we stop the function and say 'there's no result' because factorial isn't defined for negative numbers."*
 
-*   **Object-Oriented Programming (OOP):**  The code uses classes and objects to model real-world entities (the shopping cart).
-*   **Encapsulation:** The `ShoppingCart` class encapsulates the data (`items`) and the behavior (methods like `add_item`, `total_price`, and `remove_item`) related to a shopping cart.  This keeps the code organized and prevents direct access to the internal data from outside the class (although, in Python, everything is technically accessible).
-*   **Data Structures:** Uses a list (`self.items`) to store the items and dictionaries to represent each item individually.
-*   **Data Validation:** The `add_item` method includes input validation (type checking and value checking) to ensure the integrity of the data.  This is crucial for preventing errors and making the code more robust.
-*   **Constructors:** The `__init__` method is used to initialize the object when it's created.
-*   **Methods:**  Defines methods to perform specific actions on the shopping cart object.
-*   **Docstrings:**  Includes docstrings to document the purpose and usage of the class and its methods.
-*   **Exceptions:** Uses exceptions (`TypeError`, `ValueError`) to handle error conditions gracefully and provide informative messages to the user.
-*   **Default Arguments:**  Uses a default argument (`quantity=1`) in the `add_item` and `remove_item` methods to make them more flexible.
-*   **Iteration:**  Uses a `for` loop to iterate through the list of items in the `total_price` and `remove_item` methods.
-*   **Conditional Logic:** Uses `if` and `else` statements to control the flow of execution based on certain conditions.
+**4. `if n == 0:` Base Case of Recursion**
 
-**Potential Improvements and Further Considerations:**
+```python
+  if n == 0:
+    return 1  # Base case: factorial of 0 is 1
+```
 
-*   **Error Handling:** The `remove_item` method currently just prints a message if the item is not found.  A better approach would be to raise an exception (e.g., `KeyError`) to signal that the item doesn't exist.  This would allow the calling code to handle the error in a more controlled way.
-*   **More Robust Item Removal:** As noted earlier, removing items from a list while iterating over it can be problematic. A safer and more robust approach would be to create a new list containing only the items that should remain in the cart, and then replace the original `self.items` list with the new list:
+*   **`if n == 0:`**: Another conditional statement, this time checking if `n` is equal to 0.  Note the use of `==` for equality comparison (as opposed to `=` which is for assignment).
+*   **`return 1`**: If `n` is 0, the function returns 1. This is the *base case* of our recursion.  Why is it called "base case"?  Because it's the condition that stops the recursive calls from going on forever.  Factorial of 0 is defined as 1.
 
-    ```python
-    def remove_item(self, item_name, quantity=1):
-        new_items = []
-        removed = False  # Flag to check if the item was found and removed
+*In plain English: "If 'n' is zero, the answer is 1 and we stop." *
 
-        for item in self.items:
-            if item["name"] == item_name:
-                removed = True
-                if item["quantity"] <= quantity:
-                    # Don't add the item to the new list
-                    pass  # effectively removes the item
-                else:
-                    item["quantity"] -= quantity
-                    new_items.append(item)  # Add modified item to the new list
-                    break  # Only remove up to the requested quantity
+**5. `else:` The Recursive Step**
 
-            else:
-                new_items.append(item)  # Add the item to the new list
+```python
+  else:
+    return n * factorial(n - 1)  # Recursive step
+```
 
-        self.items = new_items  # Replace the old list with the new list
+*   **`else:`**:  This block is executed *only if* the previous `if` conditions ( `n < 0` and `n == 0`) are *false*.
+*   **`return n * factorial(n - 1)`**: This is the *recursive step*.  This is the heart of the recursive approach.
+    *   `factorial(n - 1)`: Here, the function is *calling itself* with a slightly modified argument (`n - 1`). This is what makes it a recursive function.
+    *   `n * factorial(n - 1)`: The result of the recursive call is then multiplied by `n`.  This adheres to the definition of factorial:  n! = n * (n-1)!
 
-        if not removed:
-            print(f"Item '{item_name}' not found in the cart.")
+*In plain English: "If 'n' is not negative or zero, we calculate the factorial by multiplying 'n' to the factorial of 'n-1', which we will recursively keep doing."*
 
-    ```
+**Understanding Recursion**
 
-*   **Quantity Management:** The current `remove_item` implementation only allows removing items of the same name. You could consider adding a mechanism to handle removing specific items based on a unique ID.
-*   **Data Persistence:**  The shopping cart data is lost when the program terminates.  You could add functionality to save the cart data to a file (e.g., using JSON) and load it back later.
-*   **Testing:**  Writing unit tests to verify the correctness of the `ShoppingCart` class would make the code more reliable.  This is a common practice in professional software development. (I can give you an example if you want)
-*   **More Complex Logic:** This can be extended to more complex examples like, offering discounts and coupons based on different conditions.
+Recursion is a powerful technique where a function solves a problem by calling itself with smaller instances of the same problem. It can be a little tricky to wrap your head around at first. Let's trace through an example with `factorial(3)`:
 
-**In Summary:**
+1.  **`factorial(3)` is called:**
+    *   `n` is 3.  The `if` conditions (`n < 0` and `n == 0`) are false.
+    *   The `else` block is executed: `return 3 * factorial(2)`
 
-This `ShoppingCart` class provides a basic framework for managing items in a shopping cart. It demonstrates several important programming concepts, including object-oriented programming, data structures, data validation, and error handling. By understanding this code and the potential improvements, you can build upon it to create more sophisticated and robust shopping cart applications.
+2.  **`factorial(2)` is called:**
+    *   `n` is 2. The `if` conditions are false.
+    *   The `else` block is executed: `return 2 * factorial(1)`
 
-Does anyone have any specific questions about any part of this code? Or would you like to dive deeper into any of the improvement suggestions? Let me know!
+3.  **`factorial(1)` is called:**
+    *   `n` is 1. The `if` conditions are false.
+    *   The `else` block is executed: `return 1 * factorial(0)`
+
+4.  **`factorial(0)` is called:**
+    *   `n` is 0. The `if n == 0` condition is *true*.
+    *   The function returns `1`.  This is the base case, and it stops the recursion.
+
+5.  **Unwinding the recursion:** Now, the function calls start to return their values, working backward:
+    *   `factorial(1)` returns `1 * 1 = 1`
+    *   `factorial(2)` returns `2 * 1 = 2`
+    *   `factorial(3)` returns `3 * 2 = 6`
+
+Therefore, `factorial(3)` returns 6, which is the correct factorial of 3.
+
+**Key Concepts Summarized**
+
+*   **Function Definition:**  `def function_name(arguments):`  defines a reusable block of code.
+*   **Docstrings:**  `""" ... """`  document the function's purpose, arguments, and return values.
+*   **Conditional Statements:** `if`, `elif`, `else` control the flow of execution based on conditions.
+*   **`return`:** Exits the function and provides a value back to the caller.
+*   **Recursion:**  A function calling itself to solve a problem by breaking it down into smaller, self-similar subproblems.  It **must** have a base case to stop the recursion.
+*   **Base Case:**  The condition in a recursive function that stops the recursive calls.  Without a base case, the recursion would continue indefinitely, leading to a "stack overflow" error.
+
+**Potential Improvements and Considerations**
+
+* **Error Handling:**  While the code handles negative inputs, it doesn't explicitly handle non-integer inputs.  You might want to add a check to ensure that `n` is an integer, and raise a `TypeError` if it's not.
+* **Iteration vs. Recursion:** Recursion can be elegant, but it can also be less efficient than iteration (using loops) due to the overhead of function calls.  For very large values of `n`, an iterative approach might be preferable. Here's an iterative version:
+
+```python
+def factorial_iterative(n):
+    """
+    Calculates the factorial of n iteratively.
+    """
+    if n < 0:
+        return None
+    result = 1
+    for i in range(1, n + 1):
+        result *= i
+    return result
+```
+
+* **Large Factorials:** Factorials grow very quickly! For even moderately large values of `n`, the result will exceed the maximum integer size that Python can represent.  For such cases, you might need to use libraries that support arbitrary-precision arithmetic.
+* **Readability:** Code is read much more often than it's written.  Prioritize readability and clarity, even if it means a few extra lines of code.
+
+**In Conclusion**
+
+That's a pretty thorough breakdown of the factorial function using recursion in Python. I've tried to explain every aspect clearly and thoroughly. Remember that understanding code is a journey, not a destination. Don't be afraid to experiment, modify the code, and see what happens! The more you practice, the better you'll become at reading, understanding, and writing code.  Ask away if you have any follow-up questions!
