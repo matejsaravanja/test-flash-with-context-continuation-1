@@ -10,7 +10,7 @@ def test_generate_svg():
 
 #Mocking IPFS for testing
 from unittest.mock import patch
-@patch('backend.utils.connect')
+@patch("backend.utils.connect")
 def test_upload_to_ipfs(mock_connect):
     mock_instance = mock_connect.return_value
     mock_instance.add.return_value = {'Hash': 'test_cid'}
