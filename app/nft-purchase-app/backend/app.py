@@ -22,11 +22,11 @@ load_dotenv()
 app = Flask(__name__)
 
 # Database Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", 'sqlite:///:memory:')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///:memory:")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # SQLite foreign key enforcement (for SQLite DBs)
-if "sqlite" in app.config['SQLALCHEMY_DATABASE_URI']:
+if "sqlite" in app.config["SQLALCHEMY_DATABASE_URI"]:
     @event.listens_for(Engine, "connect")
     def _set_sqlite_pragma(dbapi_connection, connection_record):
         if isinstance(dbapi_connection, sqlite.Connection):
@@ -35,7 +35,3 @@ if "sqlite" in app.config['SQLALCHEMY_DATABASE_URI']:
             cursor.close()
 
 db = SQLAlchemy(app
-
-# Solana Configuration
-SOLANA_RPC_URL = os.getenv("SOLANA_RPC_URL", "https://api.devnet.solana.com")
-CRAFT_TOKEN_MINT_ADDRESS = os.getenv(
