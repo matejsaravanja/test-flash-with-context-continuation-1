@@ -19,6 +19,7 @@ const PurchaseButton = ({ amount, craftTokenMintAddress, decimals,  onPurchaseSu
             setErrorMessage("Wallet not connected.");
             setIsPurchasing(false);
             return;
+
         }
 
         try {
