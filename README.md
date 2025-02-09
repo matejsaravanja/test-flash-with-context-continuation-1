@@ -8,6 +8,7 @@ I want you to build me an app for buying premium NFTs. I want user to pay me 100
 - Can you add backend-required docker files as well as frontend-required docker files. I'd also love to be able to deploy it via github actions.
 - Docker files + github workflows + I like green color. Cheers.
 - can you add dockerfile?
+- can you add dockerfile?
 
 Check OUTPUT.md for the complete unaltered output.
 
