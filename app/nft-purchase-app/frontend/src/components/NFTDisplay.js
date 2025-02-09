@@ -57,9 +57,7 @@ const NFTDisplay = () => {
                         <li key={nft.nft_id}>
                             <h3>{nft.metadata_url ? 'NFT Metadata' : 'Missing Metadata'}</h3>
                              {nft.metadata_url ? (
-                                <>
-                                    {/*  Ideally, you fetch the metadata from the URL and display it.
-                                          For simplicity, I'm just providing a link to the metadata. */}
+                                <>\n                                    {/*  Ideally, you fetch the metadata from the URL and display it.\n                                          For simplicity, I'm just providing a link to the metadata. */}
                                     <a href={nft.metadata_url} target="_blank" rel="noopener noreferrer">
                                         View NFT Metadata
                                     </a>
