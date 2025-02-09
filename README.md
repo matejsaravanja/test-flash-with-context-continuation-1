@@ -11,6 +11,7 @@ I want you to build me an app for buying premium NFTs. I want user to pay me 100
 - can you add dockerfile?
 - can you add dockerfile for both backend and frontend?
 
+- I'm missing package.json, frontend dockerfile seems a bit off as well. Also, make it green :D 
 
 Check OUTPUT.md for the complete unaltered output.
 
