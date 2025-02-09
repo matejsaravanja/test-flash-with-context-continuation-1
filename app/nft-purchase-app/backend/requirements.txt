@@ -1,0 +1,8 @@
+Flask
+Flask-SQLAlchemy
+requests
+python-dotenv
+solana
+ipfshttpclient
+SQLAlchemy==1.4.41
+psycopg2-binary #Required for postgres
