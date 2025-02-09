@@ -9,6 +9,8 @@ I want you to build me an app for buying premium NFTs. I want user to pay me 100
 - Docker files + github workflows + I like green color. Cheers.
 - can you add dockerfile?
 - can you add dockerfile?
+- can you add dockerfile for both backend and frontend?
+
 
 Check OUTPUT.md for the complete unaltered output.
 
